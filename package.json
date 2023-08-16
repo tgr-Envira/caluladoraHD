@@ -1,0 +1,49 @@
+{
+  "name": "calculadorhd",
+  "version": "1.0.0",
+  "description": "Programa para realizar cálculos diarios, horarios, octohorarios, etc",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "npx nodemon -e js,html,json --exec electron .",
+    "start": " electron .",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps",
+    "winportable": "npx electron-builder --win=portable"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://172.23.255.200/envira-ds/calculadorHD"
+  },
+  "build": {
+    "appId": "com.calculadorhd.app",
+    "productName": "Calculador HD",
+    "copyright": "Copyright © 2021 Envira SL",
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "assets/imgs/icon.ico"
+    }
+  },
+  "keywords": [
+    "calculadorHD",
+    "octohorario",
+    "diario",
+    "horario"
+  ],
+  "author": "Envira SL",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^11.2.0",
+    "electron-builder": "^22.9.1",
+    "electron-rebuild": "^2.3.4",
+    "nodemon": "^2.0.7"
+  },
+  "dependencies": {
+    "bootstrap": "^5.0.0-beta1",
+    "csv-parse": "^4.15.0",
+    "csv-writer": "^1.6.0",
+    "moment": "^2.29.1"
+  }
+}

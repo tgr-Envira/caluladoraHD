@@ -1,0 +1,5 @@
+INDEX VERSION 1.131+D:\CalculatorHD\.metadata\.plugins\org.eclipse.jdt.core
+1865797976.index
+2763822282.index
+3208038549.index
+455613567.index

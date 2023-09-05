@@ -1,0 +1,72 @@
+package canarias;
+
+import java.util.HashMap;
+import java.util.Date;
+
+public class Main {
+    public static void main(String[] args) {
+        // Ejemplo de uso
+        calculateHourlyData(1, new Date(), new Date(), true, 'V');
+    }
+
+    public static void calculateHourlyData(int stationId, Date startDate, Date endDate, boolean calcStats, char type) {
+        // Supongamos que estdata30 y estdata60 son HashMaps con clave de fecha y valor como un objeto que contiene el valor y flag.
+        // Deberían ser recuperados de la base de datos.
+        HashMap<Date, DataPoint> estdata30 = new HashMap<>();
+        HashMap<Date, DataPoint> estdata60 = new HashMap<>();
+
+        // Lógica de selección de datos según el tipo (V, T, X)
+        HashMap<Date, DataPoint> selectedData;
+        if (type == 'V') {
+            selectedData = fetchValidatedData(stationId, startDate, endDate); // Método hipotético para buscar datos validados
+        } else if (type == 'T') {
+            selectedData = fetchTempData(stationId, startDate, endDate); // Método hipotético para buscar datos temporales
+        } else {
+            selectedData = fetchBothTypesData(stationId, startDate, endDate); // Método hipotético para buscar ambos tipos de datos
+        }
+
+        // Calcular datos horarios
+        for (Date date : selectedData.keySet()) {
+            DataPoint dp1 = selectedData.get(date);
+            DataPoint dp2 = selectedData.get(new Date(date.getTime() + 30 * 60 * 1000)); // Suponiendo que los datos semihorarios están separados por 30 minutos.
+
+            if (dp1 != null && dp2 != null && isValid(dp1) && isValid(dp2)) {
+                double hourlyValue = (dp1.value + dp2.value) / 2;
+                estdata60.put(date, new DataPoint(hourlyValue, 'V')); // O 'T' dependiendo del tipo
+            }
+        }
+
+        // Calcular estadísticas si se solicita
+        if (calcStats) {
+            // Llamar a la función que calcula las estadísticas
+            calculateStatistics(estdata60); // Método hipotético para calcular estadísticas
+        }
+    }
+
+    // Verificar si un punto de datos es válido
+    public static boolean isValid(DataPoint dp) {
+        return dp.value != -9999 && (dp.flag == 'V' || dp.flag == 'O' || dp.flag == 'R');
+    }
+
+
+// Métodos hipotéticos para buscar datos (a implementar)
+public static HashMap<Date, DataPoint> fetchValidatedData(int stationId, Date startDate, Date endDate) {
+    // Implementar lógica de base de datos
+    return new HashMap<>();
+}
+
+public static HashMap<Date, DataPoint> fetchTempData(int stationId, Date startDate, Date endDate) {
+    // Implementar lógica de base de datos
+    return new HashMap<>();
+}
+
+public static HashMap<Date, DataPoint> fetchBothTypesData(int stationId, Date startDate, Date endDate) {
+    // Implementar lógica de base de datos
+    return new HashMap<>();
+}
+
+// Método hipotético para calcular estadísticas (a implementar)
+public static void calculateStatistics(HashMap<Date, DataPoint> data) {
+    // Implementar lógica de estadísticas
+}
+}

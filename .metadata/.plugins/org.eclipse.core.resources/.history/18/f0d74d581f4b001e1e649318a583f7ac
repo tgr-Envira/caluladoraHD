@@ -1,0 +1,13 @@
+package canarias;
+
+//Clase para almacenamiento datos
+class DataPoint {
+ public double value;
+ public char flag;
+
+ public DataPoint(double value, char flag) {
+     this.value = value;
+     this.flag = flag;
+ }
+
+}

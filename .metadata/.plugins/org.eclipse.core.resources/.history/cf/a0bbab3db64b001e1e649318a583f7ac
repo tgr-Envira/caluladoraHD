@@ -1,0 +1,132 @@
+package canarias;
+
+import java.util.HashMap;
+import java.sql.Statement;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.util.Date;
+
+public class Main {
+	Connection conn = null;
+	Statement stmt = null;
+	ResultSet rs = null;
+	static String url = "jdbc:postgresql://172.23.255.110:5432/calidadaire-bd";
+	static String username = "cegca";
+	static String password = "cegca";
+
+	public static void main(String[] args) {
+		// Ejemplo entrada para el uso del programa
+		calculateHourlyData(1, new Date(2023,8,25), new Date(2023,8,25), 1, false, 'V');
+	}
+
+	public static void calculateHourlyData(int stationId, Date startDate, Date endDate, int periodo, boolean calcStats, char type) {
+		// Debemos recuperar de la BBDD los datos
+		HashMap<Date, DataPoint> estdata30 = new HashMap<Date, DataPoint>();
+		HashMap<Date, DataPoint> estdata60 = new HashMap<Date, DataPoint>();
+		int i = 0;
+
+		// Lógica de selección de datos según el tipo (V, T, X)
+		HashMap<Date, DataPoint> selectedData;
+		if (type == 'V') {
+			selectedData = fetchValidatedData(stationId, startDate, endDate, periodo); // Método para buscar datos validados
+		} else if (type == 'T') {
+			selectedData = fetchTempData(stationId, startDate, endDate, periodo); // Método para buscar datos temporales
+		} else {
+			selectedData = fetchBothTypesData(stationId, startDate, endDate, periodo); // Método para buscar ambos tipos de datos
+		}
+
+		// Calcular datos horarios
+		for (Date date : selectedData.keySet()) {
+			DataPoint dp1 = selectedData.get(date);
+			// Buscamos el siguiente valor semihorario
+			DataPoint dp2 = selectedData.get(new Date(date.getTime())); 
+			i++;
+			if (dp1.periodo % 2 == 0) {
+				if (dp1 != null && dp2 != null && isValid(dp1) && isValid(dp2)) {
+					double hourlyValue = (dp1.value + dp2.value) / 2;
+					if(type == 'V')
+					estdata60.put(date, new DataPoint(hourlyValue, 11, (dp2.periodo - 1))); //Flag V (11)
+					if(type == 'T')
+					estdata60.put(date, new DataPoint(hourlyValue, 1, (dp2.periodo - 1))); //Flag T (1)
+				}
+			}
+		}
+
+		// Calcular estadísticas si se solicita
+		if (calcStats) {
+			// Llamar a la función que calcula las estadísticas
+			calculateStatistics(estdata60); // Método para calcular estadísticas
+		}
+	}
+
+	// Verificar si un punto de datos es válido
+	public static boolean isValid(DataPoint dp) {
+		return dp.value != -9999 && (dp.flag == 11 || dp.flag == 12 || dp.flag == 13);
+	}
+
+// Métodos para buscar datos (a implementar)
+	public static HashMap<Date, DataPoint> fetchValidatedData(int stationId, Date startDate, Date endDate, int periodo) {
+		HashMap<Date, DataPoint> validatedData = new HashMap<Date, DataPoint>();
+		Connection conn = null;
+		Statement stmt = null;
+		ResultSet rs = null;
+
+		try {
+			// Establecer la conexión
+			conn = DriverManager.getConnection(url, username, password);
+
+			// Crear una consulta SQL
+			stmt = (Statement) conn.createStatement();
+			System.out.print(startDate.toString());
+			String query = "SELECT * FROM estdata30 WHERE ides = " + stationId + " AND fecha_d30 BETWEEN"
+					+ startDate.toString() + " AND " + endDate.toString() + "AND (idflagv = 11)";
+
+			// Ejecutar la consulta
+			rs = ((java.sql.Statement) stmt).executeQuery(query);
+
+			// Procesar el ResultSet
+			while (rs.next()) {
+				Date date = rs.getDate("fecha_d30"); //Fecha obtenida de tabla treintaminutal
+				double value = rs.getDouble("val_d30");
+				char flag = rs.getString("idflagv").charAt(0);
+				int numP = rs.getInt("periodo_d30");
+
+				validatedData.put(date, new DataPoint(value, flag, numP));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					((Connection) stmt).close();
+				}
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return validatedData;
+	}
+
+	public static HashMap<Date, DataPoint> fetchTempData(int stationId, Date startDate,Date endDate, int periodo) {
+		// Implementar lógica de base de datos
+		return new HashMap<Date, DataPoint>();
+	}
+
+	public static HashMap<Date, DataPoint> fetchBothTypesData(int stationId, Date startDate, Date endDate, int periodo) {
+		// Implementar lógica de base de datos
+		return new HashMap<Date, DataPoint>();
+	}
+
+// Método hipotético para calcular estadísticas (a implementar)
+	public static void calculateStatistics(HashMap<Date, DataPoint> data) {
+		// Implementar lógica de estadísticas
+	}
+}

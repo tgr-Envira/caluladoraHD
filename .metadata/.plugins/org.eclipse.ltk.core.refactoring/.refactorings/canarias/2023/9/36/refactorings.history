@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename local variable &apos;endDate&apos; in &apos;canarias.Main.fetchValidatedData(...)&apos; to &apos;periodo&apos;&#x0D;&#x0A;- Original project: &apos;canarias&apos;&#x0D;&#x0A;- Original element: &apos;canarias.Main.fetchValidatedData(int, Date, Date).endDate&apos;&#x0D;&#x0A;- Renamed element: &apos;endDate&apos;&#x0D;&#x0A;- Update references to refactored element" description="Rename local variable &apos;endDate&apos;" id="org.eclipse.jdt.ui.rename.local.variable" input="/src\/main\/java=/optional=/true=/=/maven.pomderived=/true=/&lt;canarias{Main.java[Main~fetchValidatedData~I~QDate;~QDate;@endDate!2729!2740!2734!2740!QDate;!0!true" name="periodo" references="true" stamp="1693827743577" version="1.0"/>
+</session>

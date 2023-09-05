@@ -46,19 +46,7 @@ public class Main {
 			selectedData = fetchBothTypesData(stationId, startDate, endDate, periodo); // Método para buscar ambos tipos de datos
 		}
 		
-		//Prueba 2
-		/**
-		for (Date date : selectedData.keySet()) {
-		    List<DataPoint> dataPoints = selectedData.get(date);
-		    System.out.println("Fecha: " + date);
 
-		    for (DataPoint dp : dataPoints) {
-		        System.out.println("\tDataPoint: [Value = " + dp.value + ", Flag = " + dp.flag + ", Periodo = " + dp.periodo + "]");
-		    }
-		}
-
-		//Fin Prueba 2
-		*/
 		// Calcular datos horarios
 		for (Date date : selectedData.keySet()) {
 		    List<DataPoint> dataPoints = selectedData.get(date);  // Obtener la lista de DataPoints para una fecha dada
@@ -77,10 +65,12 @@ public class Main {
 		                double hourlyValue = (dp1.value + dp2.value) / 2;
 		                DataPoint datosHorarios = null;
 		                if (type == 'V') {
-		                    datosHorarios = new DataPoint(hourlyValue, 11, (dp2.periodo - 1 * i));  // Flag V (11)
+
+		                    datosHorarios = new DataPoint(hourlyValue, 11, (dp2.periodo - 1 * i),dp2.ides,dp2.cana,dp2.ctec);  // Flag V (11)
 		                   
 		                } else if (type == 'T') {
-		                    datosHorarios = new DataPoint(hourlyValue, 1, (dp2.periodo - 1));  // Flag T (1)
+
+		                    datosHorarios = new DataPoint(hourlyValue, 1, (dp2.periodo - 1 * i),dp2.ides,dp2.cana,dp2.ctec);  // Flag T (1)
 		                }
 		                
 
@@ -98,14 +88,14 @@ public class Main {
 		    System.out.println("Fecha: " + date);
 
 		    for (DataPoint dp : dataPoints) {
-		        System.out.println("\tDataPoint: [Value = " + dp.value + ", Flag = " + dp.flag + ", Periodo = " + dp.periodo + "]");
+		        System.out.println("\tDataPoint: [Value = " + dp.value + ", Flag = " + dp.flag + ", Periodo = " + dp.periodo +", Ides = " + dp.ides + ", Cana = " + dp.cana  + ", Ctec = "+ dp.ctec +  "]");
 		    }
 		}
 
 		//Fin Prueba 2
 		
 		//Insercción a la DB
-		insertHourlyData(estdata60); // Insertar los datos en la base de datos
+		//insertHourlyData(estdata60); // Insertar los datos en la base de datos
 
 		
 		// Calcular estadísticas si se solicita
@@ -135,7 +125,7 @@ public class Main {
 			// Crear una consulta SQL
 			stmt = conn.createStatement();
 			String query = "SELECT * FROM estdata30 WHERE ides = " + stationId + " AND fecha_d30 BETWEEN '"
-					+ sdf.format(startDate)  +"' AND '" + sdf.format(endDate)  + "' AND (idflagv = 11) ORDER BY fecha_d30, periodo_d30;";
+					+ sdf.format(startDate)  +"' AND '" + sdf.format(endDate)  + "' AND (idflagv = 11) ORDER BY ides,fecha_d30, cana, ctec, periodo_d30;";
 			//Prueba
 			System.out.println(query);
 			// Ejecutar la consulta
@@ -148,8 +138,11 @@ public class Main {
 				double value = rs.getDouble("val_d30");
 				int flag = rs.getInt("idflagv");
 				int numP = rs.getInt("periodo_d30");
+				int ides = rs.getInt("ides");
+				int cana = rs.getInt("cana");
+				int ctec = rs.getInt("ctec");
 
-				 DataPoint dataPoint = new DataPoint(value, flag, numP);
+				 DataPoint dataPoint = new DataPoint(value, flag, numP,ides,cana, ctec);
 			
 	           // Añadir a la lista de DataPoints para la fecha dada
             if (!validatedData.containsKey(date)) {
@@ -157,13 +150,14 @@ public class Main {
             }
             validatedData.get(date).add(dataPoint);
         }
-			/** Prueba 1
+			/**
 			//Prueba debug
 		      for (Date date : validatedData.keySet()) {
 		            List<DataPoint> dataPoints = validatedData.get(date);
 		            System.out.println("Fecha: " + date);
 		            for (DataPoint dp : dataPoints) {
-		                System.out.println("DataPoint: " + dp + " Flag= " + dp.flag + " Valor= " +  dp.value + " Periodo= " + dp.periodo); 
+		                System.out.println("DataPoint: " + dp + " Flag= " + dp.flag + " Valor= " +  dp.value + " Periodo= " + dp.periodo +
+		                		" Ides=" + dp.ides + "Cana= " + dp.cana + " Ctec>= " +dp.ctec); 
 		            }
 		        }
 			System.out.println("FIN");
@@ -210,7 +204,7 @@ public class Main {
 	        conn = DriverManager.getConnection(url, username, password);
 
 	        // Preparar la consulta SQL
-	        String sql = "INSERT INTO estdata60 (fecha_d60, val_D60, idflagv, periodo) VALUES (?, ?, ?, ?)";
+	        String sql = "INSERT INTO estdata60 (fecha_d60, val_D60, idflagv, periodo_d60) VALUES (?, ?, ?, ?)";
 	        pstmt = conn.prepareStatement(sql);
 
 	        // Recorrer cada entrada del HashMap

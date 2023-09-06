@@ -58,11 +58,12 @@ public class Main {
 
 				for (int j = 0; j < dataPoints.size(); j += 2) { // Saltar de dos en dos
 					DataPoint dp1 = dataPoints.get(j);
+					if (j < dataPoints.size()-1) {
+						if (dataPoints.get(j+1).periodo % 2 == 0) {
 					DataPoint dp2 = dataPoints.get(j + 1);
 
-
-					if (dp2.periodo % 2 == 0 && isValid(dp1) && isValid(dp2)) { // Se procesa solo si el segundo periodo
-																				// es par
+					if (dp2.periodo % 2 == 0 && isValid(dp1) && isValid(dp2)) { // Se procesa solo si el segundo periodo es par
+																				
 						double hourlyValue = (dp1.value + dp2.value) / 2;
 						DataPoint datosHorarios = null;
 						if (type == 'V') {
@@ -80,6 +81,11 @@ public class Main {
 						List<DataPoint> existingList = estdata60.getOrDefault(date, new ArrayList<>());
 						existingList.add(datosHorarios);
 						estdata60.put(date, existingList);
+					}
+				}
+						else {
+							j = j -1; //Restamos una psoción en el indice, ya que no hay pareja de registro horario
+						}
 					}
 				}
 			}

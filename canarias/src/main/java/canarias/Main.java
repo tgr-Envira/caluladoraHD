@@ -28,10 +28,10 @@ public class Main {
 		cal1.set(2023, 8, 5);
 		cal2.set(2023, 8, 7);
 		// Ejemplo entrada para el uso del programa
-		calculateHourlyData(1, cal1.getTime(), cal2.getTime(), 1, false, 'T');
+		calculateHourlyData(1, cal1.getTime(), cal2.getTime(), false, 'T');
 	}
 
-	public static void calculateHourlyData(int stationId, Date startDate, Date endDate, int periodo, boolean calcStats,
+	public static void calculateHourlyData(int stationId, Date startDate, Date endDate, boolean calcStats,
 			char type) {
 		// Debemos recuperar de la BBDD los datos
 		HashMap<Date, List<DataPoint>> estdata30 = new HashMap<Date, List<DataPoint>>();
@@ -40,12 +40,12 @@ public class Main {
 		// Lógica de selección de datos según el tipo (V, T, X)
 		HashMap<Date, List<DataPoint>> selectedData;
 		if (type == 'V') {
-			selectedData = fetchValidatedData(stationId, startDate, endDate, periodo); // Método para buscar datos
+			selectedData = fetchValidatedData(stationId, startDate, endDate); // Método para buscar datos
 																						// validados
 		} else if (type == 'T') {
-			selectedData = fetchTempData(stationId, startDate, endDate, periodo); // Método para buscar datos temporales
+			selectedData = fetchTempData(stationId, startDate, endDate); // Método para buscar datos temporales
 		} else {
-			selectedData = fetchBothTypesData(stationId, startDate, endDate, periodo); // Método para buscar ambos tipos
+			selectedData = fetchBothTypesData(stationId, startDate, endDate); // Método para buscar ambos tipos
 																						// de datos
 		}
 
@@ -73,7 +73,7 @@ public class Main {
 										datosHorarios = new DataPoint(hourlyValue, 11, (dp2.periodo / 2), dp2.ides,
 												dp2.cana, dp2.ctec); // Flag V (11)
 
-									} else if (type == 'T') {
+									} else if (type == 'T' || type == 'X') {
 
 										datosHorarios = new DataPoint(hourlyValue, 1, (dp2.periodo / 2), dp2.ides,
 												dp2.cana, dp2.ctec); // Flag T (1)
@@ -123,10 +123,14 @@ public class Main {
 																										// para datos
 																										// temporales
 	}
+	public static boolean isValid2(DataPoint dp) {
+		return dp.value2 != -9999 && (dp.flag == 11 || dp.flag == 12 || dp.flag == 13 || dp.flag == 1); // Añadimos 1
+																										// para datos
+																										// temporales
+	}
 
 // Métodos para buscar datos (a implementar)
-	public static HashMap<Date, List<DataPoint>> fetchValidatedData(int stationId, Date startDate, Date endDate,
-			int periodo) {
+	public static HashMap<Date, List<DataPoint>> fetchValidatedData(int stationId, Date startDate, Date endDate) {
 		HashMap<Date, List<DataPoint>> validatedData = new HashMap<>();
 		Connection conn = null;
 		Statement stmt = null;
@@ -195,8 +199,7 @@ public class Main {
 		return validatedData;
 	}
 
-	public static HashMap<Date, List<DataPoint>> fetchTempData(int stationId, Date startDate, Date endDate,
-			int periodo) {
+	public static HashMap<Date, List<DataPoint>> fetchTempData(int stationId, Date startDate, Date endDate) {
 		HashMap<Date, List<DataPoint>> validatedData = new HashMap<>();
 		Connection conn = null;
 		Statement stmt = null;
@@ -265,12 +268,76 @@ public class Main {
 		return validatedData;
 	}
 
-	public static HashMap<Date, List<DataPoint>> fetchBothTypesData(int stationId, Date startDate, Date endDate,
-			int periodo) {
-		// Implementar lógica de base de datos
-		return new HashMap<Date, List<DataPoint>>();
-	}
+	public static HashMap<Date, List<DataPoint>> fetchBothTypesData(int stationId, Date startDate, Date endDate) {
+		HashMap<Date, List<DataPoint>> validatedData = new HashMap<>();
+		Connection conn = null;
+		Statement stmt = null;
+		ResultSet rs = null;
 
+		try {
+			sdf = new SimpleDateFormat("yyyy-MM-dd");
+			// Establecer la conexión
+			conn = DriverManager.getConnection(url, username, password);
+
+			// Crear una consulta SQL
+			stmt = conn.createStatement();
+			String query = "SELECT * FROM estdata30 WHERE ides = " + stationId + " AND fecha_d30 BETWEEN '"
+					+ sdf.format(startDate) + "' AND '" + sdf.format(endDate)
+					+ "' AND idflagt IN (1)  ORDER BY ides,fecha_d30, cana, ctec, periodo_d30;";
+			// Prueba
+			System.out.println(query);
+			// Ejecutar la consulta
+			rs = stmt.executeQuery(query);
+
+			// Procesar el ResultSet
+			while (rs.next()) {
+				Date date = rs.getDate("fecha_d30"); // Fecha obtenida de tabla treintaminutal
+				double value = rs.getDouble("tmp_d30");
+				int flag = rs.getInt("idflagt");
+				int numP = rs.getInt("periodo_d30");
+				int ides = rs.getInt("ides");
+				int cana = rs.getInt("cana");
+				int ctec = rs.getInt("ctec");
+				int flag2 = rs.getInt("idFlagv");
+				int value2 = rs.getInt("val_d30");
+
+				DataPoint dataPoint = new DataPoint(value, flag, numP, ides, cana, ctec, flag2, value2);
+
+				// Añadir a la lista de DataPoints para la fecha dada
+				if (!validatedData.containsKey(date)) {
+					validatedData.put(date, new ArrayList<>());
+				}
+				validatedData.get(date).add(dataPoint);
+			}
+			/**
+			 * //Prueba debug for (Date date : validatedData.keySet()) { List<DataPoint>
+			 * dataPoints = validatedData.get(date); System.out.println("Fecha: " + date);
+			 * for (DataPoint dp : dataPoints) { System.out.println("DataPoint: " + dp + "
+			 * Flag= " + dp.flag + " Valor= " + dp.value + " Periodo= " + dp.periodo + "
+			 * Ides=" + dp.ides + "Cana= " + dp.cana + " Ctec>= " +dp.ctec); } }
+			 * System.out.println("FIN"); //Fin prueba
+			 */
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null) {
+					rs.close();
+				}
+				if (stmt != null) {
+					stmt.close();
+				}
+				if (conn != null) {
+					conn.close();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return validatedData;
+	}
 	public static void insertHourlyData(HashMap<Date, List<DataPoint>> estdata60, char type) {
 		Connection conn = null;
 		PreparedStatement pstmt = null;
